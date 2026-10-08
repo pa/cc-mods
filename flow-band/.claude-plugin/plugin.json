@@ -1,0 +1,7 @@
+{
+  "name": "flow-band",
+  "version": "0.2.0",
+  "description": "Band above the prompt showing the bound flow task and inbox count, with a task switcher pane",
+  "author": { "name": "Pramodh Ayyappan", "url": "https://github.com/pa" },
+  "types": "./types/index.d.ts"
+}

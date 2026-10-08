@@ -1,0 +1,12 @@
+{
+  "name": "cc-mods",
+  "owner": { "name": "Pramodh Ayyappan" },
+  "description": "Mods for Claude Code: bands, panes and hooks that add small things to the terminal.",
+  "plugins": [
+    {
+      "name": "flow-band",
+      "source": "./flow-band",
+      "description": "Band above the prompt showing the bound flow task and inbox count, with a task switcher pane"
+    }
+  ]
+}

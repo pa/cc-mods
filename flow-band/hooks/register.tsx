@@ -201,7 +201,7 @@ async function openPalette($: EngineInterface) {
   await update($, isOpen, () => true)
   await update($, tasks, () => [])
   await loadTasks($)
-  // Lands only while the band holds the keys (after ctrl+f or a click); otherwise a no-op.
+  // Lands only while the band holds the keys (after ctrl+x tab or a click); otherwise a no-op.
   if (bandId) await $.ui.focus({ requestId: bandId, key: 'q' }).catch(() => undefined)
 }
 
@@ -269,13 +269,13 @@ async function openTask($: EngineInterface, slug: string): Promise<'opened' | 'a
 
 type Els = Elements['terminal'] | Elements['desktop']
 
-// Collapsed: one row with this session's task and Switch. Switch is autoFocus, so ctrl+f
-// (abovePrompt:focus) lands on it and the ui.focus hook opens the palette. ⌃F stays last: see the hook.
+// Collapsed: one row with this session's task and Switch. Switch is autoFocus, so ctrl+x tab
+// (abovePrompt:focus) lands on it and the ui.focus hook opens the palette. ⌃X ⇥ stays last: see the hook.
 async function band($: EngineInterface, ui: Els, width: number, maxRows: number) {
   return (await read($, isOpen)) ? palette($, ui, width, maxRows) : flowRow($, ui, width)
 }
 
-// The flow row: this session's task, inbox, Switch / Hide / ⌃F.
+// The flow row: this session's task, inbox, Switch / Hide / ⌃X ⇥.
 async function flowRow($: EngineInterface, ui: Els, width: number) {
   const { Box, Button, Text } = ui
   const current = await read($, info)
@@ -302,7 +302,7 @@ async function flowRow($: EngineInterface, ui: Els, width: number) {
       {current && current.inbox > 0 && <Text color="suggestion">✉ {current.inbox}</Text>}
       <Button key="switch" hotkey="s" label="Switch" variant="primary" autoFocus onPress={() => openPalette($)} />
       <Button key="hide" hotkey="h" label="Hide" onPress={() => update($, isHidden, () => true)} />
-      <Button key="reopen" label="⌃F" plain dimColor onPress={() => openPalette($)} />
+      <Button key="reopen" label="⌃X ⇥" plain dimColor onPress={() => openPalette($)} />
     </Box>
   )
 }
@@ -464,7 +464,7 @@ async function palette($: EngineInterface, ui: Els, width: number, maxRows: numb
       {below > 0 && <Button key="page-down" plain dimColor label={`  ↓ ${below} more`} onPress={() => page(1)} />}
       {pending && <Text color="suggestion"> Opening {pending}…</Text>}
       {problem && <Text color="error"> {problem}</Text>}
-      <Text dimColor> ↵ open top · ↓↑ move · ctrl+f close · esc prompt</Text>
+      <Text dimColor> ↵ open top · ↓↑ move · × close · esc prompt</Text>
       <Text dimColor> {LEGEND}</Text>
     </Box>
   )
@@ -489,7 +489,7 @@ export const register: Register = on => {
       const query = e.args.trim()
       if (!query) {
         await openPalette($)
-        return { text: 'Flow palette open above the prompt. ctrl+f to search.' }
+        return { text: 'Flow palette open above the prompt. ctrl+x tab to search.' }
       }
       await loadTasks($)
       const top = visible(await read($, tasks), query, 'priority')[0]
@@ -516,19 +516,19 @@ export const register: Register = on => {
     return { consumed: 'flow-band notice shown as a toast' }
   })
 
-  // ctrl+f toggles the palette by moving the band's focus ring; where it lands says which way.
+  // Focus chords (ctrl+x tab, or ctrl+f where bound) toggle the palette by moving the band's focus ring; where it lands says which way.
   on('ui.focus', { component: 'AbovePrompt' }, async ($, e, next) => {
     const moved = await next(e)
     if (e.plugin !== 'flow-band') return moved
     bandId = e.requestId
     const open = await read($, isOpen)
     if (!open && (e.element === 'reopen' || e.element === 'switch')) {
-      // From the prompt, ctrl+f gives the band the keys and autoFocus puts the ring on Switch.
-      // After a close the ring is on nothing, and ctrl+f (previous) lands on the last button,
-      // ⌃F, which is why it sits at the end of the row. Either way: open.
+      // From the prompt, the focus chord gives the band the keys and autoFocus puts the ring on Switch.
+      // After a close the ring is on nothing, and abovePrompt:previous lands on the last button,
+      // ⌃X ⇥, which is why it sits at the end of the row. Either way: open.
       await openPalette($)
     } else if (open && e.element === 'toggle' && e.origin.kind === 'person') {
-      // ctrl+f from the search box moves the ring back onto ›: close.
+      // abovePrompt:previous from the search box moves the ring back onto ›: close.
       await closePalette($)
     } else if (open && e.element?.startsWith('task:')) {
       await followRow($, e.element.slice('task:'.length))
